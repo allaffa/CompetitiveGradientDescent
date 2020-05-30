@@ -551,7 +551,7 @@ class JacobiMultiCost(Optimizer):
         p_x.mul_(self.lr_x)
         p_y.mul_(self.lr_y)
 
-        error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
+        return error_real.item(), error_fake.item(), g_error.item(), p_x, p_y
 
 
 #################################################################################

@@ -13,8 +13,9 @@ import PIL.Image as pil
 from torch.autograd import Variable
 import CompetitiveGradientDescent as CGD
 
+
 class CGANs_CNN_model(CGD.CGD.GANs_model):
-    model_name = 'CNN-CGANs'
+    model_name = "CNN-CGANs"
 
     def __init__(self, data, n_classes):
         super(CGANs_CNN_model, self).__init__(data, n_classes)
@@ -26,9 +27,9 @@ class CGANs_CNN_model(CGD.CGD.GANs_model):
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = CGD.CGD.ConditionalGenerator_CNN(self.data_dimension, 
-                                             self.n_classes, 
-                                             self.noise_dimension)
+        G = CGD.CGD.ConditionalGenerator_CNN(
+            self.data_dimension, self.n_classes, self.noise_dimension
+        )
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
@@ -39,19 +40,17 @@ class CGANs_CNN_model(CGD.CGD.GANs_model):
         loss=torch.nn.MSELoss(),
         lr_x=torch.tensor([0.001]),
         lr_y=torch.tensor([0.001]),
-        optimizer_name='SGD',
+        optimizer_name="SGD",
         num_epochs=1,
         batch_size=100,
         verbose=True,
-        save_path='./data_fake_DCCGANs',
+        save_path="./data_fake_DCCGANs",
         label_smoothing=False,
         single_number=None,
         repeat_iterations=1,
     ):
         if single_number is not None:
-            self.data = [
-                i for i in self.data if i[1] == torch.tensor(single_number)
-            ]
+            self.data = [i for i in self.data if i[1] == torch.tensor(single_number)]
             self.data_loader = torch.utils.data.DataLoader(
                 self.data, batch_size=100, shuffle=True
             )
@@ -66,22 +65,18 @@ class CGANs_CNN_model(CGD.CGD.GANs_model):
 
         self.verbose = verbose
         self.save_path = save_path
-        self.optimizer_initialize(
-            loss, lr_x, lr_y, optimizer_name, self.n_classes
-        )
+        self.optimizer_initialize(loss, lr_x, lr_y, optimizer_name, self.n_classes)
         start = time.time()
         for e in range(num_epochs):
-            self.print_verbose(
-                "######################################################"
-            )
+            self.print_verbose("######################################################")
             for n_batch, (real_batch, labels) in enumerate(self.data_loader):
-                self.test_noise = CGD.CGD.noise(self.num_test_samples, self.noise_dimension)
+                self.test_noise = CGD.CGD.noise(
+                    self.num_test_samples, self.noise_dimension
+                )
                 # numpy.random.randint(0,10,self.num_test_samples)
                 self.test_labels = Variable(
                     torch.LongTensor(
-                        numpy.random.randint(
-                            0, self.n_classes, self.num_test_samples
-                        )
+                        numpy.random.randint(0, self.n_classes, self.num_test_samples)
                     )
                 )
                 # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
@@ -92,27 +87,27 @@ class CGANs_CNN_model(CGD.CGD.GANs_model):
                 self.optimizer.D = self.D
                 self.optimizer.zero_grad()
 
-                if optimizer_name == 'AdamCon':
+                if optimizer_name == "AdamCon":
                     error_real, error_fake, g_error = self.optimizer.step(
                         real_data, labels, N
                     )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
-                    raise RuntimeError('optimizer not supported, use AdamCon')
+                    raise RuntimeError("optimizer not supported, use AdamCon")
 
                 self.D_error_real_history.append(error_real)
                 self.D_error_fake_history.append(error_fake)
                 self.G_error_history.append(g_error)
 
-                self.print_verbose('Epoch: ', str(e + 1), '/', str(num_epochs))
-                self.print_verbose('Batch Number: ', str(n_batch + 1))
+                self.print_verbose("Epoch: ", str(e + 1), "/", str(num_epochs))
+                self.print_verbose("Batch Number: ", str(n_batch + 1))
                 self.print_verbose(
-                    'Error_discriminator__real: ',
+                    "Error_discriminator__real: ",
                     "{:.5e}".format(error_real),
-                    'Error_discriminator__fake: ',
+                    "Error_discriminator__fake: ",
                     "{:.5e}".format(error_fake),
-                    'Error_generator: ',
+                    "Error_generator: ",
                     "{:.5e}".format(g_error),
                 )
 
@@ -124,8 +119,6 @@ class CGANs_CNN_model(CGD.CGD.GANs_model):
                     # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
 
-            self.print_verbose(
-                "######################################################"
-            )
+            self.print_verbose("######################################################")
         end = time.time()
-        self.print_verbose('Total Time[s]: ', str(end - start))
+        self.print_verbose("Total Time[s]: ", str(end - start))

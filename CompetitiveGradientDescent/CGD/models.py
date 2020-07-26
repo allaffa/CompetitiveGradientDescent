@@ -63,9 +63,7 @@ class Upsample(nn.Module):
         self.scale_factor = scale_factor
 
     def forward(self, x):
-        return torch.nn.functional.interpolate(
-            x, scale_factor=self.scale_factor
-        )
+        return torch.nn.functional.interpolate(x, scale_factor=self.scale_factor)
 
 
 class GeneratorCNN(nn.Module):
@@ -73,9 +71,7 @@ class GeneratorCNN(nn.Module):
         super(GeneratorCNN, self).__init__()
 
         self.init_size = image_dimension // 4
-        self.l1 = nn.Sequential(
-            nn.Linear(noise_dimension, 128 * self.init_size ** 2)
-        )
+        self.l1 = nn.Sequential(nn.Linear(noise_dimension, 128 * self.init_size ** 2))
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
@@ -200,9 +196,7 @@ class ConditionalDiscriminator_MLP(nn.Module):
 
     def forward(self, img, labels):
         # Concatenate label embedding and image to produce input
-        d_in = torch.cat(
-            (img.view(img.size(0), -1), self.label_embedding(labels)), -1
-        )
+        d_in = torch.cat((img.view(img.size(0), -1), self.label_embedding(labels)), -1)
         validity = self.model(d_in)
         return validity
 

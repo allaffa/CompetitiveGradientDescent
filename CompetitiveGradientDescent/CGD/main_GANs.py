@@ -37,28 +37,25 @@ mpi4py.rc.initialize = False
 mpi4py.rc.finalize = False
 from mpi4py import MPI
 
-#from Dataloader import *
+# from Dataloader import *
 
 list_GANs = {}
 
-models_dir = 'GANs_models'
+models_dir = "GANs_models"
 # model classes must have identic name with python file in models directory
-models_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), models_dir
-)
+models_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), models_dir)
 
 # import GANs classes
 for filename in os.listdir(models_path):
     modulename, ext = os.path.splitext(filename)
-    if modulename != '__pycache__' and ext == '.py':
-        subpackage = '{0}.{1}'.format(models_dir, modulename)
+    if modulename != "__pycache__" and ext == ".py":
+        subpackage = "{0}.{1}".format(models_dir, modulename)
         obj = getattr(
-            __import__(subpackage, globals(), locals(), [modulename]),
-            modulename,
+            __import__(subpackage, globals(), locals(), [modulename]), modulename,
         )
         list_GANs.update({obj.model_name: obj})
 
-'''
+"""
 ! READ ME !
 Multi-layer perceptrons neural networks (MLP)
 Convolutional neural networks (CNN)
@@ -75,7 +72,7 @@ for GANs_object
 
 Attribute save_models of both training object saves the state dicts of the
 networks into 2 different folders inside your current directory
-'''
+"""
 
 MPI.Init()
 
@@ -83,11 +80,7 @@ MPI.Init()
 def merge_args(cmdline_args, config_args):
     for key in config_args.keys():
         if key not in cmdline_args:
-            sys.exit(
-                'Error: unknown key in the configuration file \"{}\"'.format(
-                    key
-                )
-            )
+            sys.exit('Error: unknown key in the configuration file "{}"'.format(key))
 
     args = {}
     args.update(cmdline_args)
@@ -97,14 +90,14 @@ def merge_args(cmdline_args, config_args):
 
 
 def get_options():
-    args = docopt(__doc__, version='Competitive Gradient Descent 0.0')
+    args = docopt(__doc__, version="Competitive Gradient Descent 0.0")
 
     # strip -- from names
     args = {key[2:]: value for key, value in args.items()}
 
     config_args = {}
-    if args['config']:
-        with open(args['config']) as f:
+    if args["config"]:
+        with open(args["config"]) as f:
             config_args = yaml.load(f, Loader=yaml.FullLoader)
 
     # strip certain options
@@ -112,16 +105,16 @@ def get_options():
     # - This option have already been parsed, and have no meaning as input
     #   parameters
     # - The config file options would be unallowed to contain them
-    for skip_option in {'config', 'help'}:
+    for skip_option in {"config", "help"}:
         del args[skip_option]
 
     return merge_args(args, config_args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     config = get_options()
 
-    if config['list']:
+    if config["list"]:
         print("\n  Available models:")
         for key in list_GANs.keys():
             print("    {}".format(key))
@@ -129,22 +122,22 @@ if __name__ == '__main__':
         exit(0)
 
     if MPI.COMM_WORLD.Get_rank() == 0:
-        print('-----------------')
-        print('Input parameters:')
+        print("-----------------")
+        print("Input parameters:")
         print(yaml.dump(config))
-        print('-----------------')
+        print("-----------------")
 
-    epochs = int(config['epochs'])
-    optimizer_name = config['optimizer']
-    learning_rate = float(config['learning_rate'])
+    epochs = int(config["epochs"])
+    optimizer_name = config["optimizer"]
+    learning_rate = float(config["learning_rate"])
 
-    model_name = config['model']
+    model_name = config["model"]
 
     try:
         model = list_GANs[model_name](cifar10_data_dcgans(), 10)
     except KeyError:
         sys.exit(
-            '\n   *** Error. Specified model name: {} is not valid.\n'.format(
+            "\n   *** Error. Specified model name: {} is not valid.\n".format(
                 model_name
             )
         )
@@ -160,11 +153,11 @@ if __name__ == '__main__':
         repeat_iterations=1,
     )  # save_path = ''
 
-    if config['save']:
+    if config["save"]:
         print("Saving the model...")
         model.save_models()
 
-    if config['display']:
+    if config["display"]:
         plt.figure()
         plt.plot(
             [x for x in range(0, len(model.D_error_real_history))],
@@ -175,18 +168,17 @@ if __name__ == '__main__':
             model.D_error_fake_history,
         )
         plt.plot(
-            [x for x in range(0, len(model.G_error_history))],
-            model.G_error_history,
+            [x for x in range(0, len(model.G_error_history))], model.G_error_history,
         )
-        plt.xlabel('Iterations')
-        plt.ylabel('Loss function value')
+        plt.xlabel("Iterations")
+        plt.ylabel("Loss function value")
         plt.legend(
             [
-                'Discriminator: Loss on Real Data',
-                'Discriminator: Loss on Fake Data',
-                'Generator: Loss',
+                "Discriminator: Loss on Real Data",
+                "Discriminator: Loss on Fake Data",
+                "Generator: Loss",
             ]
         )
-        plt.savefig('cost_report.png')
+        plt.savefig("cost_report.png")
 
 MPI.Finalize()

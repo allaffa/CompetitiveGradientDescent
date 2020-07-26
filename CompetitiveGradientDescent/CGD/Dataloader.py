@@ -35,24 +35,17 @@ def mnist_data(rand_rotation=False, max_degree=90):
             [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
         )
 
-    out_dir = './dataset'
-    return datasets.MNIST(
-        root=out_dir, train=True, transform=compose, download=True
-    )
+    out_dir = "./dataset"
+    return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
 
 
 def cifar10_data():
 
     compose = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        ]
+        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),]
     )
-    out_dir = './dataset'
-    return datasets.CIFAR10(
-        root=out_dir, train=True, transform=compose, download=True
-    )
+    out_dir = "./dataset"
+    return datasets.CIFAR10(root=out_dir, train=True, transform=compose, download=True)
 
 
 def mnist_data_dcgans(rand_rotation=False, max_degree=90):
@@ -74,10 +67,8 @@ def mnist_data_dcgans(rand_rotation=False, max_degree=90):
                 transforms.Normalize((0.5,), (0.5,)),
             ]
         )
-    out_dir = '{}/dataset'.format(os.getcwd())
-    return datasets.MNIST(
-        root=out_dir, train=True, transform=compose, download=True
-    )
+    out_dir = "{}/dataset".format(os.getcwd())
+    return datasets.MNIST(root=out_dir, train=True, transform=compose, download=True)
 
 
 def cifar10_data_dcgans():
@@ -88,10 +79,8 @@ def cifar10_data_dcgans():
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
     )
-    out_dir = '{}/dataset'.format(os.getcwd())
-    return datasets.CIFAR10(
-        root=out_dir, train=True, transform=compose, download=True
-    )
+    out_dir = "{}/dataset".format(os.getcwd())
+    return datasets.CIFAR10(root=out_dir, train=True, transform=compose, download=True)
 
 
 def cifar100_data():
@@ -102,7 +91,5 @@ def cifar100_data():
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
     )
-    out_dir = '{}/dataset'.format(os.getcwd())
-    return datasets.CIFAR100(
-        root=out_dir, train=True, transform=compose, download=True
-    )
+    out_dir = "{}/dataset".format(os.getcwd())
+    return datasets.CIFAR100(root=out_dir, train=True, transform=compose, download=True)

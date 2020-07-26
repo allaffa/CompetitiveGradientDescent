@@ -20,25 +20,23 @@ import matplotlib.pyplot as plt
 import PIL.Image as pil
 from torch.autograd import Variable
 
-import GANs_abstract_object
-from models import *
-from optimizers import *
-from utils import *
+import CompetitiveGradientDescent as CGD
 
 
-class CGANs_MLP_model(GANs_abstract_object.GANs_model):
+class CGANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
     model_name = 'C-GANs'
 
     def build_discriminator(self):
-        D = ConditionalDiscriminator_MLP(self.data_dimension, self.n_classes)
+        D = CGD.CGD.ConditionalDiscriminator_MLP(self.data_dimension, 
+                                                 self.n_classes)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         # n_out = numpy.prod(self.data_dimension)
-        G = ConditionalGenerator_MLP(
-            self.data_dimension, self.n_classes, self.noise_dimension
-        )
+        G = CGD.CGD.ConditionalGenerator_MLP(self.data_dimension, 
+                                             self.n_classes, 
+                                             self.noise_dimension)
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
@@ -85,9 +83,8 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
                 "######################################################"
             )
             for n_batch, (real_batch, labels) in enumerate(self.data_loader):
-                self.test_noise = noise(
-                    self.num_test_samples, self.noise_dimension
-                )
+                self.test_noise = CGD.CGD.noise(self.num_test_samples, 
+                                                self.noise_dimension)
                 # numpy.random.randint(0,10,self.num_test_samples)
                 self.test_labels = Variable(
                     torch.LongTensor(
@@ -129,9 +126,9 @@ class CGANs_MLP_model(GANs_abstract_object.GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = vectors_to_images(
+                    test_images = CGD.CGD.vectors_to_images(
                         self.G(
-                            self.test_noise.to(self.G.device),
+                        self.test_noise.to(self.G.device),
                             self.test_labels.to(self.G.device),
                         ),
                         self.data_dimension,

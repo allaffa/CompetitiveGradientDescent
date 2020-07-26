@@ -24,8 +24,7 @@ from torch import Tensor
 from torch import autograd
 from torch.autograd import Variable
 from torch.autograd import grad
-from optimizers import *
-from utils import *
+import CompetitiveGradientDescent as CGD
 from abc import ABCMeta, abstractmethod
 
 
@@ -37,8 +36,8 @@ class Optimizer(object, metaclass=ABCMeta):
         self.G = G
 
     def zero_grad(self):
-        zero_grad(self.G.parameters())
-        zero_grad(self.D.parameters())
+        CGD.CGD.zero_grad(self.G.parameters())
+        CGD.CGD.zero_grad(self.D.parameters())
 
     @abstractmethod
     def step(self, real_data, N):
@@ -54,11 +53,11 @@ class CGD(Optimizer):
         fake_data = self.G(noise(N, 100).to(self.G.device))
         prediction_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            prediction_real, ones_target(N).to(self.D.device)
+            prediction_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         prediction_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            prediction_fake, zeros_target(N).to(self.D.device)
+            prediction_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         error_tot = error_fake + error_real
         errorG = self.criterion(
@@ -148,15 +147,15 @@ class CGD_shafer(Optimizer):
 
     def step(self, real_data, N):
         self.count += 1
-        generator_noise = noise(N, 100).to(self.G.device)
+        generator_noise = CGD.CGD.noise(N, 100).to(self.G.device)
         fake_data = self.G(
             generator_noise
         )  # Second argument of noise is the noise_dimension parameter of build_generator
         d_pred_real = self.D(real_data)
-        error_real = self.criterion(d_pred_real, ones_target(N))
+        error_real = self.criterion(d_pred_real, CGD.CGD.ones_target(N))
         d_pred_fake = self.D(fake_data)
-        error_fake = self.criterion(d_pred_fake, zeros_target(N))
-        g_error = self.criterion(d_pred_fake, ones_target(N))
+        error_fake = self.criterion(d_pred_fake, CGD.CGD.zeros_target(N))
+        g_error = self.criterion(d_pred_fake, CGD.CGD.ones_target(N))
         loss = error_fake + error_real
         grad_x = autograd.grad(
             loss, self.G_params, create_graph=True, retain_graph=True
@@ -217,17 +216,15 @@ class CGD_shafer(Optimizer):
             # p_y_norm = p_y.norm(p=2).detach_()
             # if self.old_y is not None:
             #     self.old_y = self.old_y / p_y_norm
-            cg_y, self.iter_num = general_conjugate_gradient(
-                grad_x=grad_y_vec,
-                grad_y=grad_x_vec,
-                x_params=self.D_params,
-                y_params=self.G_params,
-                kk=p_y,
-                x=self.old_y,
-                nsteps=p_y.shape[0] // 10000,
-                lr_x=lr_y,
-                lr_y=lr_x,
-            )
+            cg_y, self.iter_num = CGD.CGD.general_conjugate_gradient(grad_x=grad_y_vec, 
+                                                                     grad_y=grad_x_vec,
+                                                                     x_params=self.D_params, 
+                                                                     y_params=self.G_params, 
+                                                                     kk=p_y, 
+                                                                     x=self.old_y, 
+                                                                     nsteps=p_y.shape[0] // 10000, 
+                                                                     lr_x=lr_y, 
+                                                                     lr_y=lr_x)
             # cg_y.mul_(p_y_norm)
             cg_y.detach_().mul_(-lr_y.sqrt())
             hcg = (
@@ -244,27 +241,24 @@ class CGD_shafer(Optimizer):
             # p_x_norm = p_x.norm(p=2).detach_()
             # if self.old_x is not None:
             #     self.old_x = self.old_x / p_x_norm
-            cg_x, self.iter_num = general_conjugate_gradient(
-                grad_x=grad_x_vec,
-                grad_y=grad_y_vec,
-                x_params=self.G_params,
-                y_params=self.D_params,
-                kk=p_x,
-                x=self.old_x,
-                nsteps=p_x.shape[0] // 10000,
-                lr_x=lr_x,
-                lr_y=lr_y,
-            )
+            cg_x, self.iter_num = CGD.CGD.general_conjugate_gradient(grad_x=grad_x_vec, 
+                                                                     grad_y=grad_y_vec, 
+                                                                     x_params=self.G_params, 
+                                                                     y_params=self.D_params, 
+                                                                     kk=p_x, 
+                                                                     x=self.old_x, 
+                                                                     nsteps=p_x.shape[0] // 10000, 
+                                                                     lr_x=lr_x, 
+                                                                     lr_y=lr_y)
             # cg_x.detach_().mul_(p_x_norm)
             cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
-            hcg = (
-                Hvp_vec(grad_x_vec, self.D_params, cg_x, retain_graph=True)
-                .add_(grad_y_vec)
-                .detach_()
-            )
+            hcg = (CGD.CGD.Hvp_vec(grad_x_vec, 
+                                   self.D_params, 
+                                   cg_x, 
+                                   retain_graph=True).add_(grad_y_vec).detach_())
             # grad_y + D_yx * delta x
             cg_y = hcg.mul(-lr_y)
-            self.old_y = hcg.mul(lr_y.sqrt())
+            self.old_y = CGD.CGD.hcg.mul(lr_y.sqrt())
 
         return (
             error_real.item(),
@@ -295,26 +289,26 @@ class Jacobi(Optimizer):
 
         if self.label_smoothing:
             error_real = self.criterion(
-                d_pred_real, ones_target_smooth(N).to(self.D.device)
+                d_pred_real, CGD.CGD.ones_target_smooth(N).to(self.D.device)
             )
         else:
             error_real = self.criterion(
-                d_pred_real, ones_target(N).to(self.D.device)
+                d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
             )
 
         d_pred_fake = self.D(fake_data.to(self.D.device))
 
         if self.label_smoothing:
             error_fake = self.criterion(
-                d_pred_fake, zeros_target_smooth(N).to(self.D.device)
+                d_pred_fake, CGD.CGD.zeros_target_smooth(N).to(self.D.device)
             )
         else:
             error_fake = self.criterion(
-                d_pred_fake, zeros_target(N).to(self.D.device)
+                d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
             )
 
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
 
         loss = error_fake + error_real
@@ -327,12 +321,14 @@ class Jacobi(Optimizer):
         )
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
 
-        hvp_x_vec = Hvp_vec(
-            grad_y_vec, self.G.parameters(), grad_y_vec, retain_graph=True
-        )  # D_xy * grad_y
-        hvp_y_vec = Hvp_vec(
-            grad_x_vec, self.D.parameters(), grad_x_vec, retain_graph=False
-        )  # D_yx * grad_x
+        hvp_x_vec = CGD.CGD.Hvp_vec(grad_y_vec, 
+                                    self.G.parameters(), 
+                                    grad_y_vec, 
+                                    retain_graph=True)  # D_xy * grad_y
+        hvp_y_vec = CGD.CGD.Hvp_vec(grad_x_vec, 
+                                    self.D.parameters(), 
+                                    grad_x_vec, 
+                                    retain_graph=False)  # D_yx * grad_x
 
         p_x = torch.add(
             grad_x_vec, 2 * hvp_x_vec
@@ -355,17 +351,17 @@ class GaussSeidel(Optimizer):
 
     def step(self, real_data, N):
         # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
         loss = error_fake + error_real
 
@@ -378,9 +374,10 @@ class GaussSeidel(Optimizer):
         )
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
 
-        hvp_x_vec = Hvp_vec(
-            grad_y_vec, self.G.parameters(), grad_y_vec, retain_graph=True
-        )  # D_xy * grad_y
+        hvp_x_vec = CGD.CGD.Hvp_vec(grad_y_vec, 
+                                    self.G.parameters(), 
+                                    grad_y_vec, 
+                                    retain_graph=True)  # D_xy * grad_y
         p_x = torch.add(
             grad_x_vec, 2 * hvp_x_vec
         ).detach_()  # grad_x + 2 * D_xy *  grad_y
@@ -395,17 +392,17 @@ class GaussSeidel(Optimizer):
             raise RuntimeError('CG size mismatch')
 
         # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
         loss = error_fake + error_real
 
@@ -414,9 +411,10 @@ class GaussSeidel(Optimizer):
         )
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
 
-        hvp_y_vec = Hvp_vec(
-            grad_x_vec, self.D.parameters(), grad_x_vec, retain_graph=True
-        )  # D_yx * grad_x
+        hvp_y_vec = CGD.CGD.Hvp_vec(grad_x_vec, 
+                                    self.D.parameters(), 
+                                    grad_x_vec, 
+                                    retain_graph=True)  # D_yx * grad_x
         p_y = torch.add(
             -grad_y_vec, -2 * hvp_y_vec
         ).detach_()  # grad_y +2 * D_yx * x
@@ -442,17 +440,17 @@ class SGD(Optimizer):
 
     def step(self, real_data, N):
         # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
         loss = error_fake + error_real
         # loss = d_pred_real.mean() - d_pred_fake.mean()
@@ -482,17 +480,17 @@ class Newton(Optimizer):
 
     def step(self, real_data, N):
         # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
         loss = error_fake + error_real
 
@@ -505,12 +503,14 @@ class Newton(Optimizer):
         )
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
 
-        hvp_x_vec = Hvp_vec(
-            grad_y_vec, self.G.parameters(), grad_y_vec, retain_graph=True
-        )  # D_xy * grad_y
-        hvp_y_vec = Hvp_vec(
-            grad_x_vec, self.D.parameters(), grad_x_vec, retain_graph=True
-        )  # D_yx * grad_x
+        hvp_x_vec = CGD.CGD.Hvp_vec(grad_y_vec, 
+                                    self.G.parameters(), 
+                                    grad_y_vec, 
+                                    retain_graph=True)  # D_xy * grad_y
+        hvp_y_vec = CGD.CGD.Hvp_vec(grad_x_vec, 
+                                    self.D.parameters(), 
+                                    grad_x_vec, 
+                                    retain_graph=True)  # D_yx * grad_x
 
         right_side_x = torch.add(
             grad_x_vec, 2 * hvp_x_vec
@@ -519,24 +519,20 @@ class Newton(Optimizer):
             -grad_y_vec, -2 * hvp_y_vec
         ).detach_()  # grad_y + 2 * D_yx * grad_x
 
-        p_x = general_conjugate_gradient_jacobi(
-            grad_x_vec,
-            self.G.parameters(),
-            right_side_x,
-            x=None,
-            nsteps=1000,
-            residual_tol=1e-16,
-            device=self.G.device,
-        )
-        p_y = general_conjugate_gradient_jacobi(
-            grad_y_vec,
-            self.D.parameters(),
-            right_side_y,
-            x=None,
-            nsteps=1000,
-            residual_tol=1e-16,
-            device=self.D.device,
-        )
+        p_x = CGD.CGD.general_conjugate_gradient_jacobi(grad_x_vec, 
+                                                        self.G.parameters(), 
+                                                        right_side_x, 
+                                                        x=None, 
+                                                        nsteps=1000, 
+                                                        residual_tol=1e-16, 
+                                                        device=self.G.device)
+        p_y = CGD.CGD.general_conjugate_gradient_jacobi(grad_y_vec, 
+                                                        self.D.parameters(), 
+                                                        right_side_y,
+                                                        x=None, 
+                                                        nsteps=1000, 
+                                                        residual_tol=1e-16, 
+                                                        device=self.D.device)
         p_x = p_x[0]
         p_y = p_y[0]
 
@@ -556,17 +552,17 @@ class JacobiMultiCost(Optimizer):
         self.lr_y = lr_y
 
     def step(self, real_data, N):
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
 
         g = error_fake + error_real  # f cost relative to discriminator
@@ -590,12 +586,14 @@ class JacobiMultiCost(Optimizer):
         grad_f_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_f_y])
         grad_g_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_g_y])
 
-        D_f_xy = Hvp_vec(
-            grad_f_y_vec, self.G.parameters(), grad_g_y_vec, retain_graph=True
-        )
-        D_g_yx = Hvp_vec(
-            grad_g_x_vec, self.D.parameters(), grad_f_x_vec, retain_graph=True
-        )
+        D_f_xy = CGD.CGD.Hvp_vec(grad_f_y_vec, 
+                                 self.G.parameters(), 
+                                 grad_g_y_vec, 
+                                 retain_graph=True)
+        D_g_yx = CGD.CGD.Hvp_vec(grad_g_x_vec, 
+                                 self.D.parameters(), 
+                                 grad_f_x_vec, 
+                                 retain_graph=True)
 
         p_x = torch.add(
             grad_f_x_vec, 2 * D_f_xy
@@ -631,11 +629,10 @@ class Adam(Optimizer):
         # Generator step
         self.optimizer_G.zero_grad()
         # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_fake = self.D(fake_data.to(self.D.device))
-        g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
-        )
+        g_error = self.criterion(d_pred_fake.to(self.G.device), 
+                                 CGD.CGD.ones_target(N).to(self.G.device))
 
         g_error.backward()
         self.optimizer_G.step()
@@ -644,11 +641,11 @@ class Adam(Optimizer):
         # Measure discriminator's ability to classify real from generated samples
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device).detach())
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
 
         d_loss = (error_real + error_fake) / 2
@@ -686,14 +683,13 @@ class AdamCon(Optimizer):
         fake_labels = Variable(
             torch.LongTensor(np.random.randint(0, self.n_classes, 100))
         )  # one random label among 10 possible, 100 is batch dimension
-        fake_data = self.G(
-            noise(N, 100).to(self.G.device), fake_labels.to(self.G.device)
-        )
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device), 
+                           fake_labels.to(self.G.device))
         d_pred_fake = self.D(
             fake_data.to(self.D.device), fake_labels.to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
 
         g_error.backward()
@@ -711,7 +707,7 @@ class AdamCon(Optimizer):
             fake_data.to(self.D.device).detach(), fake_labels.to(self.D.device)
         )
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
 
         d_loss = (error_real + error_fake) / 2
@@ -729,17 +725,17 @@ class CGDMultiCost(Optimizer):
         self.lr_y = lr_y
 
     def step(self, real_data, N):
-        fake_data = self.G(noise(N, 100).to(self.G.device))
+        fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_real = self.D(real_data.to(self.D.device))
         error_real = self.criterion(
-            d_pred_real, ones_target(N).to(self.D.device)
+            d_pred_real, CGD.CGD.ones_target(N).to(self.D.device)
         )
         d_pred_fake = self.D(fake_data.to(self.D.device))
         error_fake = self.criterion(
-            d_pred_fake, zeros_target(N).to(self.D.device)
+            d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
         )
 
         g = error_fake + error_real  # g cost relative to discriminator
@@ -765,18 +761,16 @@ class CGDMultiCost(Optimizer):
         scaled_grad_f_x = torch.mul(self.lr_x, grad_f_x_vec)
         scaled_grad_g_y = torch.mul(self.lr_y, grad_g_y_vec)
 
-        D_f_xy = Hvp_vec(
-            grad_f_y_vec,
-            self.G.parameters(),
-            scaled_grad_g_y,
-            retain_graph=True,
-        )  # Dxy_f * lr * grad_g_y
-        D_g_yx = Hvp_vec(
-            grad_g_x_vec,
-            self.D.parameters(),
-            scaled_grad_f_x,
-            retain_graph=True,
-        )  # Dyx_g* lr * grad_f_x
+        D_f_xy = CGD.CGD.Hvp_vec(grad_f_y_vec, 
+                                 self.G.parameters(), 
+                                 scaled_grad_g_y, 
+                                 retain_graph=True
+                                )  # Dxy_f * lr * grad_g_y
+        D_g_yx = CGD.CGD.Hvp_vec(grad_g_x_vec, 
+                                 self.D.parameters(), 
+                                 scaled_grad_f_x, 
+                                 retain_graph=True
+                                )  # Dyx_g* lr * grad_f_x
 
         p_x = torch.add(
             grad_f_x_vec, -D_f_xy
@@ -787,32 +781,28 @@ class CGDMultiCost(Optimizer):
 
         p_x.mul_(self.lr_x.sqrt())
 
-        cg_x, iter_num = general_conjugate_gradient(
-            grad_x=grad_g_x_vec,
-            grad_y=grad_f_y_vec,
-            x_params=self.G.parameters(),
-            y_params=self.D.parameters(),
-            kk=p_x,
-            x=None,
-            nsteps=p_x.shape[0],
-            lr_x=self.lr_x,
-            lr_y=self.lr_y,
-        )
+        cg_x, iter_num=CGD.CGD.general_conjugate_gradient(grad_x=grad_g_x_vec, 
+                                                          grad_y=grad_f_y_vec, 
+                                                          x_params=self.G.parameters(), 
+                                                          y_params=self.D.parameters(), 
+                                                          kk=p_x, 
+                                                          x=None, 
+                                                          nsteps=p_x.shape[0], 
+                                                          lr_x=self.lr_x, 
+                                                          lr_y=self.lr_y)
 
         cg_x.detach_().mul_(-self.lr_y.sqrt())  # Necessario ?
 
         p_y.mul_(self.lr_y.sqrt())
-        cg_y, iter_num = general_conjugate_gradient(
-            grad_x=grad_f_y_vec,
-            grad_y=grad_g_x_vec,
-            x_params=self.D.parameters(),
-            y_params=self.G.parameters(),
-            kk=p_y,
-            x=None,
-            nsteps=p_y.shape[0],
-            lr_x=self.lr_x,
-            lr_y=self.lr_y,
-        )
+        cg_y, iter_num=CGD.CGD.general_conjugate_gradient(grad_x=grad_f_y_vec, 
+                                                          grad_y=grad_g_x_vec, 
+                                                          x_params=self.D.parameters(), 
+                                                          y_params=self.G.parameters(), 
+                                                          kk=p_y, 
+                                                          x=None, 
+                                                          nsteps=p_y.shape[0], 
+                                                          lr_x=self.lr_x, 
+                                                          lr_y=self.lr_y)
 
         cg_y.detach_().mul_(-self.lr_y.sqrt())  # moltiplicare per -lr o +lr
 

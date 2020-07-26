@@ -13,10 +13,7 @@ Created on Sat Apr  4 17:34:40 2020
 """
 import torch
 import numpy
-from models import *
-from optimizers import *
-from Dataloader import *
-from utils import *
+import CompetitiveGradientDescent as CGD
 import time
 import PIL.Image as pil
 import numpy as np
@@ -30,8 +27,8 @@ class GANs_model(metaclass=ABCMeta):
     def __init__(self, data, n_classes):
         self.mpi_comm_size = MPI.COMM_WORLD.Get_size()
         self.mpi_rank = MPI.COMM_WORLD.Get_rank()
-        self.num_gpus = count_gpus()
-        self.list_gpuIDs = get_gpus_list()
+        self.num_gpus = CGD.CGD.count_gpus()
+        self.list_gpuIDs = CGD.CGD.get_gpus_list()
         self.data = data
         self.n_classes = n_classes
         self.data_dimension = self.data[0][0].numpy().shape
@@ -94,10 +91,10 @@ class GANs_model(metaclass=ABCMeta):
                 )
                 generator_gpu_index = discriminator_gpu_index
 
-            self.discriminator_device = get_gpu(
+            self.discriminator_device = CGD.CGD.get_gpu(
                 self.list_gpuIDs[discriminator_gpu_index]
             )
-            self.generator_device = get_gpu(
+            self.generator_device = CGD.CGD.get_gpu(
                 self.list_gpuIDs[generator_gpu_index]
             )
 
@@ -128,23 +125,21 @@ class GANs_model(metaclass=ABCMeta):
                 self.G, self.D, loss, lr_x, lr_y, label_smoothing
             )
         elif optimizer_name == "CGD":
-            self.optimizer = CGD(self.G, self.D, loss, lr_x)
+            self.optimizer = CGD.CGD.CGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == "Newton":
-            self.optimizer = Newton(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = CGD.CGD.Newton(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == "JacobiMultiCost":
-            self.optimizer = JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = CGD.CGD.JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == "GaussSeidel":
-            self.optimizer = GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = CGD.CGD.GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == "SGD":
-            self.optimizer = SGD(self.G, self.D, loss, lr_x)
+            self.optimizer = CGD.CGD.SGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == "Adam":
-            self.optimizer = Adam(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = CGD.CGD.Adam(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == "CGD_multi":
-            self.optimizer = CGDMultiCost(self.G, self.D, loss, lr_x)
+            self.optimizer = CGD.CGD.CGDMultiCost(self.G, self.D, loss, lr_x)
         elif optimizer_name == "AdamCon":
-            self.optimizer = AdamCon(
-                self.G, self.D, loss, lr_x, lr_y, n_classes
-            )
+            self.optimizer = CGD.CGD.AdamCon(self.G, self.D, loss, lr_x, lr_y, n_classes)
         else:
             raise RuntimeError("Optimizer type is not valid")
 

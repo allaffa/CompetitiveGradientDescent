@@ -19,24 +19,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import PIL.Image as pil
 
-import GANs_abstract_object
-from models import *
-from optimizers import *
-from utils import *
+import CompetitiveGradientDescent as CGD
 
 
-class GANs_MLP_model(GANs_abstract_object.GANs_model):
+class GANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
     model_name = 'MLP'
 
     def build_discriminator(self):
         n_features = np.prod(self.data_dimension)
-        D = Discriminator_MLP(n_features)
+        D = CGD.CGD.Discriminator_MLP(n_features)
         return D
 
     def build_generator(self, noise_dimension=100):
         self.noise_dimension = noise_dimension
         n_out = np.prod(self.data_dimension)
-        G = Generator_MLP(noise_dimension, n_out)
+        G = CGD.CGD.Generator_MLP(noise_dimension, n_out)
         return G
 
     # loss = torch.nn.BCEWithLogitsLoss()
@@ -145,7 +142,7 @@ class GANs_MLP_model(GANs_abstract_object.GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = vectors_to_images(
+                    test_images = CGD.CGD.vectors_to_images(
                         self.G(self.test_noise.to(self.G.device)),
                         self.data_dimension,
                     )  # data_dimension: dimension of output image ex: [1,28,28]

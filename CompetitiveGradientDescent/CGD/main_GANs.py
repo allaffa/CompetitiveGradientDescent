@@ -30,14 +30,14 @@ from docopt import docopt
 import matplotlib.pyplot as plt
 import sys, os
 import yaml
-
+import CompetitiveGradientDescent as CGD
 import mpi4py
 
 mpi4py.rc.initialize = False
 mpi4py.rc.finalize = False
 from mpi4py import MPI
 
-from Dataloader import *
+#from Dataloader import *
 
 list_GANs = {}
 

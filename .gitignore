@@ -3,6 +3,45 @@
 
 __pycache__
 .DS_Store
+__pycache__/
+CompetitiveGradientDescent/__pycache__/
+CompetitiveGradientDescent/CGD/__pycache__/
+CompetitiveGradientDescent/GAN/__pycache__/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Jupyter notebook auto-generated files
+.ipynb_checkpoints/
+CompetitiveGradientDescent/.ipynb_checkpoints/
+CompetitiveGradientDescent/CGD/.ipynb_checkpoints/
+CompetitiveGradientDescent/GAN/.ipynb_checkpoints/
+*$py.class
+*.pyc
+*.code-workspace
 
 # data directories
 data_fake*
@@ -12,4 +51,6 @@ data_mnist/*
 # result files
 cost_report.png
 
+# C extensions
+*.so
 

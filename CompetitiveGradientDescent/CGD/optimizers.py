@@ -61,7 +61,8 @@ class CGD(Optimizer):
         )
         error_tot = error_fake + error_real
         errorG = self.criterion(
-            prediction_fake.to(self.G.device), ones_target(N).to(self.G.device),
+            prediction_fake.to(self.G.device),
+            ones_target(N).to(self.G.device),
         )
         grad_x = autograd.grad(
             error_tot,
@@ -72,7 +73,10 @@ class CGD(Optimizer):
         )
         grad_x_vec = torch.cat([g.contiguous().view(-1) for g in grad_x])
         grad_y = autograd.grad(
-            error_tot, self.D.parameters(), create_graph=True, retain_graph=True,
+            error_tot,
+            self.D.parameters(),
+            create_graph=True,
+            retain_graph=True,
         )
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
         scaled_grad_x = torch.mul(self.lr.to(self.G.device), grad_x_vec)
@@ -123,7 +127,9 @@ class CGD(Optimizer):
 
 
 class CGD_shafer(Optimizer):
-    def __init__(self, G, D, criterion, eps=1e-8, beta2=0.99, lr=1e-3, solve_x=False):
+    def __init__(
+        self, G, D, criterion, eps=1e-8, beta2=0.99, lr=1e-3, solve_x=False
+    ):
         super(CGD_shafer, self).__init__(G, D, criterion)
         self.G_params = list(G.parameters())
         self.D_params = list(D.parameters())
@@ -161,8 +167,12 @@ class CGD_shafer(Optimizer):
         grad_y_vec = torch.cat([g.contiguous().view(-1) for g in grad_y])
 
         if self.square_avgx is None and self.square_avgy is None:
-            self.square_avgx = torch.zeros(grad_x_vec.size(), requires_grad=False)
-            self.square_avgy = torch.zeros(grad_y_vec.size(), requires_grad=False)
+            self.square_avgx = torch.zeros(
+                grad_x_vec.size(), requires_grad=False
+            )
+            self.square_avgy = torch.zeros(
+                grad_y_vec.size(), requires_grad=False
+            )
         self.square_avgx.mul_(self.beta2).addcmul_(
             1 - self.beta2, grad_x_vec.data, grad_x_vec.data
         )
@@ -247,7 +257,9 @@ class CGD_shafer(Optimizer):
             # cg_x.detach_().mul_(p_x_norm)
             cg_x.detach_().mul_(lr_x.sqrt())  # delta x = lr_x.sqrt() * cg_x
             hcg = (
-                CGD.CGD.Hvp_vec(grad_x_vec, self.D_params, cg_x, retain_graph=True)
+                CGD.CGD.Hvp_vec(
+                    grad_x_vec, self.D_params, cg_x, retain_graph=True
+                )
                 .add_(grad_y_vec)
                 .detach_()
             )
@@ -268,7 +280,9 @@ class CGD_shafer(Optimizer):
 
 
 class Jacobi(Optimizer):
-    def __init__(self, G, D, criterion, lr_x=1e-3, lr_y=1e-3, label_smoothing=False):
+    def __init__(
+        self, G, D, criterion, lr_x=1e-3, lr_y=1e-3, label_smoothing=False
+    ):
         super(Jacobi, self).__init__(G, D, criterion)
         self.lr_x = lr_x
         self.lr_y = lr_y
@@ -301,7 +315,8 @@ class Jacobi(Optimizer):
             )
 
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
 
         loss = error_fake + error_real
@@ -352,7 +367,8 @@ class GaussSeidel(Optimizer):
             d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
         loss = error_fake + error_real
 
@@ -392,7 +408,8 @@ class GaussSeidel(Optimizer):
             d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
         loss = error_fake + error_real
 
@@ -404,7 +421,9 @@ class GaussSeidel(Optimizer):
         hvp_y_vec = CGD.CGD.Hvp_vec(
             grad_x_vec, self.D.parameters(), grad_x_vec, retain_graph=True
         )  # D_yx * grad_x
-        p_y = torch.add(-grad_y_vec, -2 * hvp_y_vec).detach_()  # grad_y +2 * D_yx * x
+        p_y = torch.add(
+            -grad_y_vec, -2 * hvp_y_vec
+        ).detach_()  # grad_y +2 * D_yx * x
         # p_x = torch.add(grad_x_vec, 2*hvp_x_vec).detach_()  # grad_x +2 * D_xy * y
         p_y = p_y.mul_(self.lr_y.sqrt().to(self.D.device))
 
@@ -437,7 +456,8 @@ class SGD(Optimizer):
             d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
         loss = error_fake + error_real
         # loss = d_pred_real.mean() - d_pred_fake.mean()
@@ -477,7 +497,8 @@ class Newton(Optimizer):
             d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
         loss = error_fake + error_real
 
@@ -551,7 +572,8 @@ class JacobiMultiCost(Optimizer):
             d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
 
         g = error_fake + error_real  # f cost relative to discriminator
@@ -582,8 +604,12 @@ class JacobiMultiCost(Optimizer):
             grad_g_x_vec, self.D.parameters(), grad_f_x_vec, retain_graph=True
         )
 
-        p_x = torch.add(grad_f_x_vec, 2 * D_f_xy).detach_()  # grad_x + 2*D_xy * grad_y
-        p_y = torch.add(grad_g_y_vec, 2 * D_g_yx).detach_()  # grad_y + 2*D_yx * grad_x
+        p_x = torch.add(
+            grad_f_x_vec, 2 * D_f_xy
+        ).detach_()  # grad_x + 2*D_xy * grad_y
+        p_y = torch.add(
+            grad_g_y_vec, 2 * D_g_yx
+        ).detach_()  # grad_y + 2*D_yx * grad_x
         p_x = p_x.mul_(-self.lr_x.to(self.G.device))
         p_y = p_y.mul_(-self.lr_y.to(self.D.device))
 
@@ -615,7 +641,8 @@ class Adam(Optimizer):
         fake_data = self.G(CGD.CGD.noise(N, 100).to(self.G.device))
         d_pred_fake = self.D(fake_data.to(self.D.device))
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
 
         g_error.backward()
@@ -640,7 +667,9 @@ class Adam(Optimizer):
 
 
 class AdamCon(Optimizer):
-    def __init__(self, G, D, criterion, lr_x, lr_y, n_classes, b1=0.5, b2=0.999):
+    def __init__(
+        self, G, D, criterion, lr_x, lr_y, n_classes, b1=0.5, b2=0.999
+    ):
         super(AdamCon, self).__init__(G, D, criterion)
         self.G = G
         self.D = D
@@ -666,11 +695,15 @@ class AdamCon(Optimizer):
             torch.LongTensor(np.random.randint(0, self.n_classes, 100))
         )  # one random label among 10 possible, 100 is batch dimension
         fake_data = self.G(
-            CGD.CGD.noise(N, 100).to(self.G.device), fake_labels.to(self.G.device)
+            CGD.CGD.noise(N, 100).to(self.G.device),
+            fake_labels.to(self.G.device),
         )
-        d_pred_fake = self.D(fake_data.to(self.D.device), fake_labels.to(self.D.device))
+        d_pred_fake = self.D(
+            fake_data.to(self.D.device), fake_labels.to(self.D.device)
+        )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
 
         g_error.backward()
@@ -678,8 +711,12 @@ class AdamCon(Optimizer):
         # Discriminator step
         self.optimizer_D.zero_grad()
         # Measure discriminator's ability to classify real from generated samples
-        d_pred_real = self.D(real_data.to(self.D.device), labels.to(self.D.device))
-        error_real = self.criterion(d_pred_real, ones_target(N).to(self.D.device))
+        d_pred_real = self.D(
+            real_data.to(self.D.device), labels.to(self.D.device)
+        )
+        error_real = self.criterion(
+            d_pred_real, ones_target(N).to(self.D.device)
+        )
         d_pred_fake = self.D(
             fake_data.to(self.D.device).detach(), fake_labels.to(self.D.device)
         )
@@ -712,7 +749,8 @@ class CGDMultiCost(Optimizer):
             d_pred_fake, CGD.CGD.zeros_target(N).to(self.D.device)
         )
         g_error = self.criterion(
-            d_pred_fake.to(self.G.device), CGD.CGD.ones_target(N).to(self.G.device)
+            d_pred_fake.to(self.G.device),
+            CGD.CGD.ones_target(N).to(self.G.device),
         )
 
         g = error_fake + error_real  # g cost relative to discriminator
@@ -739,10 +777,16 @@ class CGDMultiCost(Optimizer):
         scaled_grad_g_y = torch.mul(self.lr_y, grad_g_y_vec)
 
         D_f_xy = CGD.CGD.Hvp_vec(
-            grad_f_y_vec, self.G.parameters(), scaled_grad_g_y, retain_graph=True
+            grad_f_y_vec,
+            self.G.parameters(),
+            scaled_grad_g_y,
+            retain_graph=True,
         )  # Dxy_f * lr * grad_g_y
         D_g_yx = CGD.CGD.Hvp_vec(
-            grad_g_x_vec, self.D.parameters(), scaled_grad_f_x, retain_graph=True
+            grad_g_x_vec,
+            self.D.parameters(),
+            scaled_grad_f_x,
+            retain_graph=True,
         )  # Dyx_g* lr * grad_f_x
 
         p_x = torch.add(

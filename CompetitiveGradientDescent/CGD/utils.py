@@ -77,7 +77,9 @@ def images_to_vectors(images):
 
 
 def vectors_to_images(vectors, array_dim):
-    return vectors.view(vectors.size(0), array_dim[0], array_dim[1], array_dim[2])
+    return vectors.view(
+        vectors.size(0), array_dim[0], array_dim[1], array_dim[2]
+    )
 
 
 def images_to_vectors_cifar10(images):
@@ -197,7 +199,11 @@ def Hvp_vec(grad_vec, params, vec, retain_graph=False):
 def hessian_vec(grad_vec, var, retain_graph=False):
     v = torch.ones_like(var)
     (vec,) = autograd.grad(
-        grad_vec, var, grad_outputs=v, allow_unused=True, retain_graph=retain_graph,
+        grad_vec,
+        var,
+        grad_outputs=v,
+        allow_unused=True,
+        retain_graph=retain_graph,
     )
     return vec
 
@@ -241,7 +247,10 @@ class Richardson(object):
 
         solution = initial_guess
 
-        while relative_residual_norm > self.tol and self.iteration_count < self.maxiter:
+        while (
+            relative_residual_norm > self.tol
+            and self.iteration_count < self.maxiter
+        ):
             ## TODO: consider making all of these non-attributes and just return them
             solution = solution + self.relaxation * residual
 
@@ -379,7 +388,10 @@ def general_conjugate_gradient_jacobi(
 
     for i in range(nsteps):
         h_1 = Hvp_vec(
-            grad_vec=grad_x.to(device), params=x_params, vec=2 * x, retain_graph=True,
+            grad_vec=grad_x.to(device),
+            params=x_params,
+            vec=2 * x,
+            retain_graph=True,
         )
         H = -h_1.to(device) + x
         Avp_ = right_side_clone2 + H

@@ -43,7 +43,9 @@ list_GANs = {}
 
 models_dir = "GANs_models"
 # model classes must have identic name with python file in models directory
-models_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), models_dir)
+models_path = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), models_dir
+)
 
 # import GANs classes
 for filename in os.listdir(models_path):
@@ -51,7 +53,8 @@ for filename in os.listdir(models_path):
     if modulename != "__pycache__" and ext == ".py":
         subpackage = "{0}.{1}".format(models_dir, modulename)
         obj = getattr(
-            __import__(subpackage, globals(), locals(), [modulename]), modulename,
+            __import__(subpackage, globals(), locals(), [modulename]),
+            modulename,
         )
         list_GANs.update({obj.model_name: obj})
 
@@ -80,7 +83,9 @@ MPI.Init()
 def merge_args(cmdline_args, config_args):
     for key in config_args.keys():
         if key not in cmdline_args:
-            sys.exit('Error: unknown key in the configuration file "{}"'.format(key))
+            sys.exit(
+                'Error: unknown key in the configuration file "{}"'.format(key)
+            )
 
     args = {}
     args.update(cmdline_args)
@@ -168,7 +173,8 @@ if __name__ == "__main__":
             model.D_error_fake_history,
         )
         plt.plot(
-            [x for x in range(0, len(model.G_error_history))], model.G_error_history,
+            [x for x in range(0, len(model.G_error_history))],
+            model.G_error_history,
         )
         plt.xlabel("Iterations")
         plt.ylabel("Loss function value")

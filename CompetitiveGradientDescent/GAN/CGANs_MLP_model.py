@@ -27,7 +27,9 @@ class CGANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
     model_name = "C-GANs"
 
     def build_discriminator(self):
-        D = CGD.CGD.ConditionalDiscriminator_MLP(self.data_dimension, self.n_classes)
+        D = CGD.CGD.ConditionalDiscriminator_MLP(
+            self.data_dimension, self.n_classes
+        )
         return D
 
     def build_generator(self, noise_dimension=100):
@@ -56,7 +58,9 @@ class CGANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
         repeat_iterations=1,
     ):
         if single_number is not None:
-            self.data = [i for i in self.data if i[1] == torch.tensor(single_number)]
+            self.data = [
+                i for i in self.data if i[1] == torch.tensor(single_number)
+            ]
             self.data_loader = torch.utils.data.DataLoader(
                 self.data, batch_size=100, shuffle=True
             )
@@ -71,10 +75,14 @@ class CGANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
 
         self.verbose = verbose
         self.save_path = save_path
-        self.optimizer_initialize(loss, lr_x, lr_y, optimizer_name, self.n_classes)
+        self.optimizer_initialize(
+            loss, lr_x, lr_y, optimizer_name, self.n_classes
+        )
         start = time.time()
         for e in range(num_epochs):
-            self.print_verbose("######################################################")
+            self.print_verbose(
+                "######################################################"
+            )
             for n_batch, (real_batch, labels) in enumerate(self.data_loader):
                 self.test_noise = CGD.CGD.noise(
                     self.num_test_samples, self.noise_dimension
@@ -82,7 +90,9 @@ class CGANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
                 # numpy.random.randint(0,10,self.num_test_samples)
                 self.test_labels = Variable(
                     torch.LongTensor(
-                        numpy.random.randint(0, self.n_classes, self.num_test_samples)
+                        numpy.random.randint(
+                            0, self.n_classes, self.num_test_samples
+                        )
                     )
                 )
                 # self.test_labels = Variable(torch.LongTensor(np.random.randint(0, self.n_classes, batch_size)))
@@ -127,6 +137,8 @@ class CGANs_MLP_model(CGD.CGD.GANs_abstract_object.GANs_model):
                     )  # data_dimension: dimension of output image ex: [1,28,28]
                     self.save_images(e, n_batch, test_images)
 
-            self.print_verbose("######################################################")
+            self.print_verbose(
+                "######################################################"
+            )
         end = time.time()
         self.print_verbose("Total Time[s]: ", str(end - start))

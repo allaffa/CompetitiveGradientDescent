@@ -79,12 +79,16 @@ class GANs_model(metaclass=ABCMeta):
             rank = self.mpi_rank
             comm_size = self.mpi_comm_size
 
-            num_ranks_with_2_gpus = max(min(num_gpus - comm_size, comm_size), 0)
+            num_ranks_with_2_gpus = max(
+                min(num_gpus - comm_size, comm_size), 0
+            )
             if rank < num_ranks_with_2_gpus:
                 discriminator_gpu_index = 2 * rank + 0
                 generator_gpu_index = discriminator_gpu_index + 1
             else:
-                discriminator_gpu_index = rank % num_gpus + num_ranks_with_2_gpus
+                discriminator_gpu_index = (
+                    rank % num_gpus + num_ranks_with_2_gpus
+                )
                 generator_gpu_index = discriminator_gpu_index
 
             self.discriminator_device = CGD.CGD.get_gpu(
@@ -108,18 +112,30 @@ class GANs_model(metaclass=ABCMeta):
         pass
 
     def optimizer_initialize(
-        self, loss, lr_x, lr_y, optimizer_name, n_classes, label_smoothing=False,
+        self,
+        loss,
+        lr_x,
+        lr_y,
+        optimizer_name,
+        n_classes,
+        label_smoothing=False,
     ):
         if optimizer_name == "Jacobi":
-            self.optimizer = Jacobi(self.G, self.D, loss, lr_x, lr_y, label_smoothing)
+            self.optimizer = Jacobi(
+                self.G, self.D, loss, lr_x, lr_y, label_smoothing
+            )
         elif optimizer_name == "CGD":
             self.optimizer = CGD.CGD.CGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == "Newton":
             self.optimizer = CGD.CGD.Newton(self.G, self.D, loss, lr_x, lr_y)
         elif optimizer_name == "JacobiMultiCost":
-            self.optimizer = CGD.CGD.JacobiMultiCost(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = CGD.CGD.JacobiMultiCost(
+                self.G, self.D, loss, lr_x, lr_y
+            )
         elif optimizer_name == "GaussSeidel":
-            self.optimizer = CGD.CGD.GaussSeidel(self.G, self.D, loss, lr_x, lr_y)
+            self.optimizer = CGD.CGD.GaussSeidel(
+                self.G, self.D, loss, lr_x, lr_y
+            )
         elif optimizer_name == "SGD":
             self.optimizer = CGD.CGD.SGD(self.G, self.D, loss, lr_x)
         elif optimizer_name == "Adam":

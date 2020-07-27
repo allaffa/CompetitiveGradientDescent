@@ -29,7 +29,9 @@ class GANs_CNN_model(CGD.CGD.GANs_abstract_object.GANs_model):
         super(GANs_CNN_model, self).__init__(data, n_classes)
 
     def build_discriminator(self):
-        D = CGD.CGD.DiscriminatorCNN(self.data_dimension[0], self.data_dimension[1])
+        D = CGD.CGD.DiscriminatorCNN(
+            self.data_dimension[0], self.data_dimension[1]
+        )
         D.apply(weights_init_normal)
         return D
 
@@ -67,7 +69,9 @@ class GANs_CNN_model(CGD.CGD.GANs_abstract_object.GANs_model):
             if single_number is None and self.mpi_comm_size > 1:
                 single_number = torch.tensor(self.mpi_rank)
 
-            self.data = [i for i in self.data if i[1] == torch.tensor(single_number)]
+            self.data = [
+                i for i in self.data if i[1] == torch.tensor(single_number)
+            ]
             self.data_loader = torch.utils.data.DataLoader(
                 self.data, batch_size=100, shuffle=True
             )
@@ -86,14 +90,20 @@ class GANs_CNN_model(CGD.CGD.GANs_abstract_object.GANs_model):
         )
         start = time.time()
         for e in range(num_epochs):
-            self.print_verbose("######################################################")
+            self.print_verbose(
+                "######################################################"
+            )
             for n_batch, (real_batch, _) in enumerate(self.data_loader):
-                self.test_noise = noise(self.num_test_samples, self.noise_dimension)
+                self.test_noise = noise(
+                    self.num_test_samples, self.noise_dimension
+                )
                 real_data = Variable((real_batch))
                 N = real_batch.size(0)
                 self.optimizer.zero_grad()
                 if optimizer_name == "GaussSeidel" or optimizer_name == "Adam":
-                    error_real, error_fake, g_error = self.optimizer.step(real_data, N)
+                    error_real, error_fake, g_error = self.optimizer.step(
+                        real_data, N
+                    )
                     self.D = self.optimizer.D
                     self.G = self.optimizer.G
                 else:
@@ -108,13 +118,17 @@ class GANs_CNN_model(CGD.CGD.GANs_abstract_object.GANs_model):
 
                         index = 0
                         for p in self.G.parameters():
-                            p.data.add_(p_x[index : index + p.numel()].reshape(p.shape))
+                            p.data.add_(
+                                p_x[index : index + p.numel()].reshape(p.shape)
+                            )
                             index += p.numel()
                         if index != p_x.numel():
                             raise RuntimeError("CG size mismatch")
                         index = 0
                         for p in self.D.parameters():
-                            p.data.add_(p_y[index : index + p.numel()].reshape(p.shape))
+                            p.data.add_(
+                                p_y[index : index + p.numel()].reshape(p.shape)
+                            )
                             index += p.numel()
                         if index != p_y.numel():
                             raise RuntimeError("CG size mismatch")
@@ -135,9 +149,13 @@ class GANs_CNN_model(CGD.CGD.GANs_abstract_object.GANs_model):
                 )
 
                 if (n_batch) % self.display_progress == 0:
-                    test_images = self.optimizer.G(self.test_noise.to(self.G.device))
+                    test_images = self.optimizer.G(
+                        self.test_noise.to(self.G.device)
+                    )
                     self.save_images(e, n_batch, test_images)
 
-            self.print_verbose("######################################################")
+            self.print_verbose(
+                "######################################################"
+            )
         end = time.time()
         self.print_verbose("Total Time[s]: ", str(end - start))

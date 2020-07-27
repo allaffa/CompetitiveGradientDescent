@@ -23,6 +23,9 @@ conda install -n {env_name} matplotlib docopt ipython mpi4py
 conda install -n {env_name} -c anaconda pyyaml
 conda install -n {env_name} pytorch torchvision -c pytorch
 conda install -n {env_name} tensorboardx -c conda-forge
+cd CompetitiveGradientDescent
+python3 setup.py build
+python3 setup.py install
 ```
 
 Optional, if NVIDIA gpu is present:

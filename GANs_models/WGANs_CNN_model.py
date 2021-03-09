@@ -33,7 +33,7 @@ class WGANs_CNN_model(GANs_abstract_object.GANs_model):
         super(WGANs_CNN_model, self).__init__(data, n_classes, model_name)
 
     def build_discriminator(self):
-        D = Discriminator_torch(self.data_dimension[0], self.data_dimension[1])
+        D = W_Discriminator_torch(self.data_dimension[0], self.data_dimension[1])
         D.apply(weights_init_normal)
         return D
 

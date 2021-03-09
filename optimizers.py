@@ -996,7 +996,7 @@ class WGANS_Adam(Optimizer):
         noise = torch.randn(N, 100, 1, 1).to(self.G.device)
         # Second argument of noise is the noise_dimension parameter of build_generator
         fake_data = self.G(noise).detach()
-        g_error = -torch.mean(self.D(fake_data.to(self.G.device)))
+        g_error = -torch.mean(self.D(fake_data.to(self.D.device)))to(self.G.device)
 
         g_error.backward()
         self.optimizer_G.step()

@@ -21,7 +21,7 @@ Options:
   --list                      List available models.
   -c, --config=<str>          Filename containing configuration parameters
   -e, --epochs=<n>            Number of epochs [default: 100].
-  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN), conditional MLP (C-GANs), conditional CNN (CNN-CGANs), resnet, (ResNet) [default: MLP].
+  -m, --model=<str>           Implementation of GANs model. Multi-layer perceptrons NN (MLP), convolutional NN (CNN), conditional MLP (C-GANs), conditional CNN (CNN-CGANs), resnet, (ResNet) [default: MLP], Wasserstein CNN (WGANS-CNN).
   -o, --optimizer=<str>       Optimizer name [default: Jacobi].
   -r, --learning_rate=<f>     Learning rate [default: 0.01].
   -d, --dataset=<srt>         Datased used for training. MNIST, CIFAR10, CIFAR100 [default: CIFAR10]

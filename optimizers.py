@@ -844,6 +844,7 @@ class CGDMultiCost(Optimizer):
 
 
 class Adam_torch(Optimizer):
+    # This version of Adam works for CNN architectures
     def __init__(
         self,
         G,
@@ -954,3 +955,67 @@ class Adam_torch(Optimizer):
             self.optimizer_D.step()
 
             return error_real.item(), error_fake.item(), g_error.item()
+
+
+#################################################################################
+class WGANS_Adam(Optimizer):
+    
+    def __init__(
+        self,
+        G,
+        D,
+        criterion,
+        model_name,
+        lr_x,
+        lr_y,
+        n_classes,
+        b1=0.5,
+        b2=0.999,
+    ):
+        super(WGANS_Adam, self).__init__(G, D, criterion, model_name)
+        self.G = G
+        self.D = D
+        self.lr_x = lr_x.item()
+        self.lr_y = lr_y.item()
+        self.b1 = b1
+        self.b2 = b2
+        self.n_classes = n_classes
+
+        # Optimizers
+        self.optimizer_G = torch.optim.Adam(
+            self.G.parameters(), lr=self.lr_x, betas=(self.b1, self.b2)
+        )
+        self.optimizer_D = torch.optim.Adam(
+            self.D.parameters(), lr=self.lr_y, betas=(self.b1, self.b2)
+        )
+
+    def step(self, real_data, labels, N):
+
+        # Generator step
+        self.optimizer_G.zero_grad()
+        noise = torch.randn(N, 100, 1, 1).to(self.G.device)
+        # Second argument of noise is the noise_dimension parameter of build_generator
+        fake_data = self.G(noise).detach()
+
+        # Discriminator step
+        self.optimizer_D.zero_grad()
+        # Measure discriminator's ability to classify real from generated samples
+
+        error_real = torch.mean(self.D(real_data))
+        error_fake = torch.mean(self.D(fake_data))
+        
+        g_error = -torch.mean(self.D(fake_data))
+
+        g_error.backward()
+        self.optimizer_G.step()        
+        
+        # Clip weights of discriminator
+        for p in self.D.parameters():
+            p.data.clamp_(-1.0, 1.0)        
+
+        d_loss =  - error_real + error_fake
+        d_loss.backward()
+        self.optimizer_D.step()
+
+        return error_real.item(), error_fake.item(), g_error.item()
+

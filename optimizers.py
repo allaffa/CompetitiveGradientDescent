@@ -1022,5 +1022,5 @@ class WGANS_Adam(Optimizer):
         d_loss.backward()
         self.optimizer_D.step()
 
-            return error_real.item(), error_fake.item(), g_error.item()
+        return error_real.item(), error_fake.item(), g_error.item()
 

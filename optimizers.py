@@ -1021,6 +1021,10 @@ class WGANS_Adam(Optimizer):
         d_loss = (error_real + error_fake) 
         d_loss.backward()
         self.optimizer_D.step()
+        
+        # Clip weights of discriminator
+        for p in self.D.parameters():
+            p.data.clamp_(-1e-2, 1e-2)        
 
         return error_real.item(), error_fake.item(), g_error.item()
 

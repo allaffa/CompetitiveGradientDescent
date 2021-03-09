@@ -995,27 +995,32 @@ class WGANS_Adam(Optimizer):
         self.optimizer_G.zero_grad()
         noise = torch.randn(N, 100, 1, 1).to(self.G.device)
         # Second argument of noise is the noise_dimension parameter of build_generator
-        fake_data = self.G(noise).detach()
+        fake_data = self.G(noise)
+        d_pred_fake = self.D(fake_data.to(self.D.device)).view(-1)
+        label_1 = torch.full((N,), 1.0, dtype=torch.float).to(
+            self.G.device
+        )
+        g_error = self.criterion(d_pred_fake.to(self.G.device), label_1)
 
+        g_error.backward()
+        self.optimizer_G.step()
         # Discriminator step
         self.optimizer_D.zero_grad()
         # Measure discriminator's ability to classify real from generated samples
+        d_pred_real = self.D(real_data.to(self.D.device)).view(-1)
+        label_1 = torch.full((N,), 1.0, dtype=torch.float).to(
+            self.D.device
+        )
+        error_real = self.criterion(d_pred_real, label_1)
+        d_pred_fake = self.D(fake_data.to(self.D.device).detach()).view(-1)
+        label_0 = torch.full((N,), 0.0, dtype=torch.float).to(
+            self.D.device
+        )
+        error_fake = self.criterion(d_pred_fake, label_0)
 
-        error_real = torch.mean(self.D(real_data.to(self.D.device))).to(self.D.device)
-        error_fake = torch.mean(self.D(fake_data.to(self.D.device))).to(self.D.device)
-        
-        g_error = -torch.mean(self.D(fake_data.to(self.G.device))).to(self.G.device)
-
-        g_error.backward()
-        self.optimizer_G.step()        
-        
-        # Clip weights of discriminator
-        for p in self.D.parameters():
-            p.data.clamp_(-0.1, 0.1)        
-
-        d_loss =  - error_real + error_fake
+        d_loss = (error_real + error_fake) / 2
         d_loss.backward()
         self.optimizer_D.step()
 
-        return error_real.item(), error_fake.item(), g_error.item()
+            return error_real.item(), error_fake.item(), g_error.item()
 

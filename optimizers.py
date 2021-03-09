@@ -1001,10 +1001,10 @@ class WGANS_Adam(Optimizer):
         self.optimizer_D.zero_grad()
         # Measure discriminator's ability to classify real from generated samples
 
-        error_real = torch.mean(self.D(real_data))
-        error_fake = torch.mean(self.D(fake_data))
+        error_real = torch.mean(self.D(real_data)).to(self.D.device)
+        error_fake = torch.mean(self.D(fake_data)).to(self.D.device)
         
-        g_error = -torch.mean(self.D(fake_data))
+        g_error = -torch.mean(self.D(fake_data)).to(self.G.device)
 
         g_error.backward()
         self.optimizer_G.step()        
